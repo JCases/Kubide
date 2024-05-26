@@ -5,7 +5,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { AuthService } from './../auth/auth.service';
 
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 describe('UserController', () => {
   let controller: UserController;
