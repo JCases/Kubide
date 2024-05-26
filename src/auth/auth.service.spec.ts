@@ -12,7 +12,7 @@ describe('AuthService', () => {
   let jwtService: JwtService;
 
   const mockUserService = {
-    user: jest.fn(),
+    userWithPassword: jest.fn(),
   };
 
   const mockJwtService = {
@@ -47,15 +47,23 @@ describe('AuthService', () => {
     it('should return an access token if credentials are valid', async () => {
       const email = 'test@example.com';
       const password = 'password';
-      const user = { id: 1, email, password };
+      const user = {
+        id: '1',
+        email,
+        password:
+          '$2a$10$D8wdIBz5Deq6Ia7ogEUSq.SOnrGKQMWhuf3lpZRIT5oL6pK0H/G0W',
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      mockUserService.user.mockResolvedValue(user);
+      mockUserService.userWithPassword.mockResolvedValue(user);
       mockJwtService.signAsync.mockResolvedValue('token');
 
       const result = await service.signIn(email, password);
 
       expect(result).toEqual({ access_token: 'token' });
-      expect(mockUserService.user).toHaveBeenCalledWith({ email, password });
+      expect(mockUserService.userWithPassword).toHaveBeenCalledWith({ email });
       expect(mockJwtService.signAsync).toHaveBeenCalledWith({
         email: user.email,
         sub: user.id,
@@ -65,26 +73,26 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException if credentials are invalid', async () => {
       const email = 'test@example.com';
       const password = 'password';
-      const user = { id: 1, email, password: 'wrongpassword' };
+      const user = { id: '1', email, password: 'wrongpassword' };
 
-      mockUserService.user.mockResolvedValue(user);
+      mockUserService.userWithPassword.mockResolvedValue(user);
 
-      await expect(service.signIn(email, password)).rejects.toThrow(
-        UnauthorizedException,
-      );
-      expect(mockUserService.user).toHaveBeenCalledWith({ email, password });
+      const result = service.signIn(email, password);
+
+      await expect(result).rejects.toThrow(UnauthorizedException);
+      expect(mockUserService.userWithPassword).toHaveBeenCalledWith({ email });
     });
 
     it('should throw UnauthorizedException if user is not found', async () => {
       const email = 'test@example.com';
       const password = 'password';
 
-      mockUserService.user.mockResolvedValue(null);
+      mockUserService.userWithPassword.mockResolvedValue(null);
 
-      await expect(service.signIn(email, password)).rejects.toThrow(
-        UnauthorizedException,
-      );
-      expect(mockUserService.user).toHaveBeenCalledWith({ email, password });
+      const result = service.signIn(email, password);
+
+      await expect(result).rejects.toThrow(UnauthorizedException);
+      expect(mockUserService.userWithPassword).toHaveBeenCalledWith({ email });
     });
   });
 });

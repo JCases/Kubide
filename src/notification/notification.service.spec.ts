@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationService } from './notification.service';
 
 import { Notification, Prisma } from '@prisma/client';
-import { PrismaService } from './../prisma.service';
+import { PrismaService } from '../utils/prisma.service';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -15,6 +15,7 @@ describe('NotificationService', () => {
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       delete: jest.fn(),
     },
   };
@@ -164,6 +165,53 @@ describe('NotificationService', () => {
       expect(mockPrismaService.notification.update).toHaveBeenCalledWith({
         data: updateNotificationInput,
         where: whereNotificationInput,
+      });
+    });
+  });
+
+  describe('updateNotifications', () => {
+    it('should update multiple notifications', async () => {
+      const updateNotificationsInput: Prisma.NotificationUpdateInput = {
+        read: { set: true },
+      };
+      const whereNotificationsInput: Prisma.NotificationWhereInput = {
+        user: { id: '1' },
+      };
+
+      const expectedUpdateNotifications: Prisma.BatchPayload = { count: 2 };
+      const expectedNotifications: Notification[] = [
+        {
+          id: '1',
+          userId: '1',
+          messageId: '1',
+          read: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockPrismaService.notification.updateMany.mockResolvedValue(
+        expectedUpdateNotifications,
+      );
+
+      mockPrismaService.notification.findMany.mockResolvedValue(
+        expectedNotifications,
+      );
+
+      expect(
+        await service.updateNotifications({
+          where: whereNotificationsInput,
+          data: updateNotificationsInput,
+        }),
+      ).toBe(expectedNotifications);
+
+      expect(mockPrismaService.notification.updateMany).toHaveBeenCalledWith({
+        data: updateNotificationsInput,
+        where: whereNotificationsInput,
+      });
+
+      expect(mockPrismaService.notification.findMany).toHaveBeenCalledWith({
+        where: whereNotificationsInput,
       });
     });
   });

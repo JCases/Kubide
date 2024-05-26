@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 
 import { User, Prisma } from '@prisma/client';
-import { PrismaService } from './../prisma.service';
+import { PrismaService } from '../utils/prisma.service';
 
 describe('UserService', () => {
   let service: UserService;
@@ -41,10 +41,9 @@ describe('UserService', () => {
   describe('user', () => {
     it('should return a user if found', async () => {
       const userWhereUniqueInput: Prisma.UserWhereUniqueInput = { id: '1' };
-      const expectedUser: User = {
+      const expectedUser: Partial<User> = {
         id: '1',
         email: 'john@example.com',
-        password: 'hashedpassword',
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -52,7 +51,51 @@ describe('UserService', () => {
 
       mockPrismaService.user.findUnique.mockResolvedValue(expectedUser);
 
-      expect(await service.user(userWhereUniqueInput)).toBe(expectedUser);
+      const result = await service.user(userWhereUniqueInput);
+
+      expect(result).toBe(expectedUser);
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: userWhereUniqueInput,
+        omit: {
+          password: true,
+        },
+      });
+    });
+
+    it('should return null if user not found', async () => {
+      const userWhereUniqueInput: Prisma.UserWhereUniqueInput = { id: '1' };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+      const result = await service.user(userWhereUniqueInput);
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+        where: userWhereUniqueInput,
+        omit: {
+          password: true,
+        },
+      });
+    });
+  });
+
+  describe('userWithPassword', () => {
+    it('should return a user with password if found', async () => {
+      const userWhereUniqueInput: Prisma.UserWhereUniqueInput = { id: '1' };
+      const expectedUser: Partial<User> = {
+        id: '1',
+        email: 'john@example.com',
+        password: 'password',
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(expectedUser);
+
+      const result = await service.userWithPassword(userWhereUniqueInput);
+
+      expect(result).toEqual(expectedUser);
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: userWhereUniqueInput,
       });
@@ -63,7 +106,9 @@ describe('UserService', () => {
 
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      expect(await service.user(userWhereUniqueInput)).toBeNull();
+      const result = await service.userWithPassword(userWhereUniqueInput);
+
+      expect(result).toBeNull();
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: userWhereUniqueInput,
       });
@@ -72,11 +117,10 @@ describe('UserService', () => {
 
   describe('users', () => {
     it('should return an array of users', async () => {
-      const users: User[] = [
+      const users: Partial<User>[] = [
         {
           id: '1',
           email: 'john@example.com',
-          password: 'hashedpassword',
           active: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -84,7 +128,6 @@ describe('UserService', () => {
         {
           id: '2',
           email: 'jane@example.com',
-          password: 'hashedpassword',
           active: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -93,8 +136,14 @@ describe('UserService', () => {
 
       mockPrismaService.user.findMany.mockResolvedValue(users);
 
-      expect(await service.users({})).toBe(users);
-      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({});
+      const result = await service.users({});
+
+      expect(result).toBe(users);
+      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
+        omit: {
+          password: true,
+        },
+      });
     });
   });
 
@@ -105,10 +154,9 @@ describe('UserService', () => {
         password: 'hashedpassword',
         active: true,
       };
-      const expectedUser: User = {
+      const expectedUser: Partial<User> = {
         id: '1',
         email: 'john@example.com',
-        password: 'hashedpassword',
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -116,9 +164,14 @@ describe('UserService', () => {
 
       mockPrismaService.user.create.mockResolvedValue(expectedUser);
 
-      expect(await service.createUser(createUserInput)).toBe(expectedUser);
+      const result = await service.createUser(createUserInput);
+
+      expect(result).toBe(expectedUser);
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: createUserInput,
+        omit: {
+          password: true,
+        },
       });
     });
   });
@@ -129,10 +182,9 @@ describe('UserService', () => {
         email: { set: 'updated@example.com' },
       };
       const whereUserInput: Prisma.UserWhereUniqueInput = { id: '1' };
-      const expectedUser: User = {
+      const expectedUser: Partial<User> = {
         id: '1',
         email: 'updated@example.com',
-        password: 'hashedpassword',
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -140,15 +192,18 @@ describe('UserService', () => {
 
       mockPrismaService.user.update.mockResolvedValue(expectedUser);
 
-      expect(
-        await service.updateUser({
-          where: whereUserInput,
-          data: updateUserInput,
-        }),
-      ).toBe(expectedUser);
+      const result = await service.updateUser({
+        where: whereUserInput,
+        data: updateUserInput,
+      });
+
+      expect(result).toBe(expectedUser);
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
         data: updateUserInput,
         where: whereUserInput,
+        omit: {
+          password: true,
+        },
       });
     });
   });
@@ -156,10 +211,9 @@ describe('UserService', () => {
   describe('deleteUser', () => {
     it('should delete and return a user', async () => {
       const whereUserInput: Prisma.UserWhereUniqueInput = { id: '1' };
-      const expectedUser: User = {
+      const expectedUser: Partial<User> = {
         id: '1',
         email: 'john@example.com',
-        password: 'hashedpassword',
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -167,9 +221,14 @@ describe('UserService', () => {
 
       mockPrismaService.user.delete.mockResolvedValue(expectedUser);
 
-      expect(await service.deleteUser(whereUserInput)).toBe(expectedUser);
+      const result = await service.deleteUser(whereUserInput);
+
+      expect(result).toBe(expectedUser);
       expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
         where: whereUserInput,
+        omit: {
+          password: true,
+        },
       });
     });
   });

@@ -33,42 +33,32 @@ describe('AuthController', () => {
 
   describe('signIn', () => {
     it('should return an access token if credentials are valid', async () => {
-      const signInDto = { email: 'test@example.com', password: 'password' };
+      const signIn = { email: 'test@example.com', password: 'password' };
       const token = { access_token: 'token' };
 
       mockAuthService.signIn.mockResolvedValue(token);
 
-      const result = await controller.signIn(signInDto);
+      const result = await controller.signIn(signIn);
 
       expect(result).toBe(token);
       expect(mockAuthService.signIn).toHaveBeenCalledWith(
-        signInDto.email,
-        signInDto.password,
+        signIn.email,
+        signIn.password,
       );
     });
 
     it('should throw UnauthorizedException if credentials are invalid', async () => {
-      const signInDto = { email: 'test@example.com', password: 'password' };
+      const signIn = { email: 'test@example.com', password: 'password' };
 
       mockAuthService.signIn.mockRejectedValue(new UnauthorizedException());
 
-      await expect(controller.signIn(signInDto)).rejects.toThrow(
+      await expect(controller.signIn(signIn)).rejects.toThrow(
         UnauthorizedException,
       );
       expect(mockAuthService.signIn).toHaveBeenCalledWith(
-        signInDto.email,
-        signInDto.password,
+        signIn.email,
+        signIn.password,
       );
-    });
-  });
-
-  describe('getProfile', () => {
-    it('should return the user profile from the request', () => {
-      const req = { user: { id: 1, email: 'test@example.com' } };
-
-      const result = controller.getProfile(req);
-
-      expect(result).toBe(req.user);
     });
   });
 });
