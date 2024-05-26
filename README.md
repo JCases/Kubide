@@ -32,6 +32,14 @@ Prueba técnica backend Kubide.
 $ npm install
 ```
 
+Create a file .env with:
+
+```bash
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="kubide"
+BCRYPT_SALT=10
+```
+
 ## Running the app
 
 ```bash
